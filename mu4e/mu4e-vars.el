@@ -49,38 +49,24 @@ path."
   :safe 'stringp)
 
 (defcustom mu4e-maildir (expand-file-name "~/Maildir")
-  "The file system path to your Maildir. Must not be a symbolic
-link."
+  "The file system path to your Maildir."
   :type 'directory
   :safe 'stringp
   :group 'mu4e)
 
 (defcustom mu4e-get-mail-command "true"
   "Shell command to run to retrieve new mail.
-Common values are \"offlineimap\", \"fetchmail\" and \"mbsync\",
-but you use arbitrary shell-commands. If you set it to
-\"true\" (the default), the command won't don't anything, which is
-useful if you get your mail without the need to explicitly run any
-scripts, for example when running your own mail-server."
+Common values are \"offlineimap\" and \"fetchmail\", but you use
+arbitrary shell-commands.
+
+If you set it to \"true\" (the default), the command won't don't
+anything, which is useful if you get your mail without the need to
+explicitly run any scripts, for example when running yout own
+mail-server.
+"
   :type 'string
   :group 'mu4e
   :safe 'stringp)
-
-(defcustom mu4e-index-update-error-warning t
-  "Whether to display warnings when we the retrieval process (as
-  per `mu4e-get-mail-command') finished with a non-zero exit code."
-  :type 'boolean
-  :group 'mu4e
-  :safe 'booleanp)
-
-(defcustom mu4e-index-update-error-continue t
-  "Whether to continue with indexing when we the retrieval
-  process (as per `mu4e-get-mail-command') finished with a non-zero
-  exit code."
-  :type 'boolean
-  :group 'mu4e
-  :safe 'booleanp)
-
 
 (defcustom mu4e-update-interval nil
   "Number of seconds between automatic calls to retrieve mail and
@@ -195,11 +181,6 @@ view buffer."
   :type 'boolean
   :group 'mu4e)
 
-(defcustom mu4e-cited-regexp "^ *\\(\\(>+ ?\\)+\\)"
-  "Regular expression that determines whether a line is a citation."
-  :type 'string
-  :group 'mu4e)
-
 (defcustom mu4e-completing-read-function 'ido-completing-read
   "Function to be used to receive input from the user with
 completion. This is used to receive the name of the maildir
@@ -250,7 +231,7 @@ The setting is a symbol:
   "Whether to consider only 'personal' e-mail addresses,
 i.e. addresses from messages where user was explicitly in one of
 the address fields (this excludes mailing list messages). See
-`mu4e-user-mail-address-list' and the mu-index manpage for details for
+`mu4e-my-email-addresses' and the mu-index manpage for details for
 details (in particular, how to define your own e-mail addresses)."
   :type 'boolean
   :group 'mu4e-compose)
@@ -262,28 +243,6 @@ Date must be a string, in a format parseable by
 Set to nil to not have any time-based restriction."
   :type 'string
   :group 'mu4e-compose)
-
-
-;;; names and mail-addresses can be mapped onto their canonical
-;;; counterpart.  use the customizeable function
-;;; mu4e-canonical-contact-function to do that.  below the identity
-;;; function for mapping a contact onto the canonical one.
-(defun mu4e-contact-identity (contact)
-  "This returns the name and the mail-address of a contact.
-It is used as the identity function for converting contacts to
-their canonical counterpart; useful as an example."
-    (let ((name (plist-get contact :name))
-          (mail (plist-get contact :mail)))
-      (list :name name :mail mail)))
-
-(defcustom mu4e-contact-rewrite-function nil
-  "Function to be used for when processing contacts and rewrite
-them, for example you may use this for correcting typo's, changed
-names and adapting addresses or names to company policies. As an
-example of this, see `mu4e-contact-identity'."
-  :type 'function
-  :group 'mu4e-compose)
-
 
 (defcustom mu4e-compose-complete-ignore-address-regexp "no-?reply"
   "Ignore any e-mail addresses for completion if they match this regexp."
@@ -448,7 +407,7 @@ I.e. a message with the draft flag set."
   '((t :inherit font-lock-preprocessor-face))
   "Face for the mark in the headers list."
   :group 'mu4e-faces)
-
+ 
 (defface mu4e-header-key-face
   '((t :inherit message-header-name-face :bold t))
   "Face for a header key (such as \"Foo\" in \"Subject:\ Foo\")."
@@ -462,6 +421,21 @@ I.e. a message with the draft flag set."
 (defface mu4e-special-header-value-face
   '((t :inherit font-lock-variable-name-face))
   "Face for special header values."
+  :group 'mu4e-faces)
+
+(defface mu4e-header-first-thread-unfolded-face
+  '((t :inherit mu4e-header-face))
+  "Face for the first message of a conversation, when unfolded"
+  :group 'mu4e-faces)
+
+(defface mu4e-header-first-thread-folded-face
+  '((t :inherit mu4e-header-highlight-face))
+  "Face for the first message of a conversation, when folded"
+  :group 'mu4e-faces)
+
+(defface mu4e-header-thread-block-face
+  '((t :inherit mu4e-header-face))
+  "Face for the other (not first) messages of a conversation"
   :group 'mu4e-faces)
 
 (defface mu4e-link-face
@@ -482,11 +456,6 @@ I.e. a message with the draft flag set."
 (defface mu4e-title-face
   '((t :inherit font-lock-type-face :bold t))
   "Face for a header title in the headers view."
-  :group 'mu4e-faces)
-
-(defface mu4e-modeline-face
-  '((t :inherit font-lock-string-face :bold t))
-  "Face for the query view in the mode-line."
   :group 'mu4e-faces)
 
 (defface mu4e-footer-face
@@ -565,12 +534,7 @@ mu4e-compose-mode."
   "Face for the separator between headers / message in
 mu4e-compose-mode."
   :group 'mu4e-faces)
-
-(defface mu4e-region-code
-    '((t (:background "DarkSlateGray")))
-  "Face for highlighting marked region in mu4e-view buffer."
-  :group 'mu4e-faces)
-
+ 
 ;; headers info
 (defconst mu4e-header-info
   '( (:attachments .
@@ -638,11 +602,6 @@ mu4e-compose-mode."
 	 :shortname "Sgn"
 	 :help "Check for the cryptographic signature"
 	 :sortable nil))
-     (:decryption .
-       ( :name "Decryption"
-	 :shortname "Dec"
-	 :help "Check the cryptographic decryption status"
-	 :sortable nil))
      (:size .
        ( :name "Size"
 	 :shortname "Size"
@@ -658,11 +617,6 @@ mu4e-compose-mode."
 	 :shortname "Tags"
 	 :help "Tags for the message"
 	 :sortable nil))
-     (:thread-subject .
-       ( :name "Subject"
-	 :shortname "Subject"
-	 :help "Subject of the thread"
-	 :sortable :subject))
      (:to .
        ( :name "To"
 	 :shortname "T"
@@ -695,7 +649,7 @@ Note, `:sortable' does not work for custom header fields.")
 	   (format "%d"
 	     (+ (length (mu4e-message-field msg :to))
 	       (length (mu4e-message-field msg :cc))))))))
-"A list of custom (user-defined) headers. The format is similar
+"A list of custom (user-defined) headerr. The format is similar
 to `mu4e-header-info', but addds a :function property, which should
 point to a function that takes a message p-list as argument, and
 returns a string. See the default value of `mu4e-header-info-custom
