@@ -83,3 +83,4 @@ configure.lineno
 /lib/doxyfile
 /version.texi
 /compile
+*.exe
